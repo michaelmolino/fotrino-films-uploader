@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-video2hls="$HOME/Workspace/video2hls/video2hls"
+video2hls="${HOME}/Workspace/video2hls/video2hls"
 
 # DON'T CHANGE ANYTHING BELOW THIS LINE
 
@@ -29,8 +29,8 @@ python -mjson.tool "${1}/Collection.json" &>/dev/null || { echo "Invalid JSON...
 # TODO
 
 # Check Media
-for file in "$1/Media"*.*; do
-    [[ $(mediainfo --Output="Video;%AspectRatio%" "$file") == "1.778" ]] || { echo "Wrong aspect ratio: ${file}..."; fail=1; }
+for file in "$1/Media"*.m*; do
+    [[ $(mediainfo --Output="Video;%AspectRatio%" "${file}") == "1.778" ]] || { echo "Wrong aspect ratio: ${file}..."; fail=1; }
 done
 
 [[ $fail -eq 1 ]] && exit 1
@@ -43,17 +43,25 @@ token=$(<~/.fotrino/token)
 [[ $(curl -o /dev/null -s -w "%{http_code}" -H "Authorization: Bearer $token" https://films.fotrino.com/api/account/hello) == "200" ]] || { echo "Invalid token..."; exit 1; }
 
 # Convert Video
-for file in "$1/Media"*.*; do
+for file in "$1/Media"*.m*; do
     "$video2hls" --video-bitrates 4500 2500 1300 800 400 --video-widths 1920 1280 854 640 427  --no-poster --no-mp4 "$file"
+done
+
+# Optimise Images
+for file in "${1}/"*.jpg; do
+    dir="$(dirname "${file}")"
+    filename=$(basename -- "${file}")
+    extension="${filename##*.}"
+    basefile="${filename%.*}"
+    gm convert -resize 720x720 -strip -interlace Plane -quality 80 "${file}" "${dir}/${basefile}_opt.${extension}"
 done
 
 echo "So far so good! But this script doesn't work yet."
 exit 0
 
 # TODO
-# Optimise Images
-# gm convert -resize 720x720 -strip -interlace Plane -quality 80 <path/to/original> <path/to/new>
 # Create pending collection
+# curl -H "Authorization: Bearer $token" -X POST https://films.fotrino.com/api/collections -d @${1}/Collection.json --H "Content-Type: application/json"
 # Upload Media
-# Optional: Faceboom Preview
+# Optional: Facebook Preview
 # Publish collection
