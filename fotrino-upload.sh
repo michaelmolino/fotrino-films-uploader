@@ -23,6 +23,7 @@ done
 
 # Check JSON
 python -mjson.tool "${1}/Collection.json" &>/dev/null || { echo "Invalid JSON..."; fail=1; }
+# TODO Check required fields
 
 # Check Images
 # TODO
@@ -35,17 +36,24 @@ done
 [[ $fail -eq 1 ]] && exit 1
 
 # Get API Token
-[[ -f ~/.fotrino/token ]] || { read -pr "Enter API Token (Secret): " token; mkdir -p ~/.fotrino/; echo "$token" > ~/.fotrino/token; echo "Secret API Token written to ~/.fotrino/token."; }
+[[ -f ~/.fotrino/token ]] || { read -r -p "Enter API Token (Secret): " token; mkdir -p ~/.fotrino/; echo "$token" > ~/.fotrino/token; echo "Secret API Token written to ~/.fotrino/token."; }
 [[ -f ~/.fotrino/token ]] || { echo "Unable to save token to disk..."; exit 1; }
+# Test Token
+token=$(<~/.fotrino/token)
+[[ $(curl -o /dev/null -s -w "%{http_code}" -H "Authorization: Bearer $token" https://films.fotrino.com/api/account/hello) == "200" ]] || { echo "Invalid token..."; exit 1; }
+
+# Convert Video
+for file in "$1/Media"*.*; do
+    "$video2hls" --video-bitrates 4500 2500 1300 800 400 --video-widths 1920 1280 854 640 427  --no-poster --no-mp4 "$file"
+done
 
 echo "So far so good! But this script doesn't work yet."
 exit 0
 
 # TODO
-# Convert Video
-# video2hls --video-bitrates 4500 2500 1300 800 400 --video-widths 1920 1280 854 640 427  --no-poster --no-mp4 <path/to/file/>
 # Optimise Images
 # gm convert -resize 720x720 -strip -interlace Plane -quality 80 <path/to/original> <path/to/new>
 # Create pending collection
 # Upload Media
+# Optional: Faceboom Preview
 # Publish collection
