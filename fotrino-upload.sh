@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-# api='https://films.fotrino.com'
-api='https://localhost:8081'
+api='https://films.fotrino.com'
+# api='https://localhost:8081'
 insecure=''
-insecure='-k'
+# insecure='-k'
 video2hls="${HOME}/Workspace/video2hls/video2hls"
 
 # DON'T CHANGE ANYTHING BELOW THIS LINE
@@ -59,3 +59,10 @@ done
 
 echo "So far so good! But this script doesn't work yet."
 exit 0
+
+# TODO
+# Hash and rename files
+# Request pre-signed URLs from API
+# Record length of video (number of segments)
+# Upload
+# Change pending status to false
