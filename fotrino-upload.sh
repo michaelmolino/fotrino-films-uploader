@@ -8,6 +8,8 @@ video2hls="${HOME}/Workspace/video2hls/video2hls"
 
 # DON'T CHANGE ANYTHING BELOW THIS LINE
 
+shopt -s nullglob
+
 # Check OS
 os=$(uname)
 [[ "$os" = 'Darwin' ]] || { echo "Unsupported Operating System!"; exit 1; }
@@ -27,26 +29,24 @@ done
 # STOP if there are errors
 [[ $fail -eq 1 ]] && exit 1
 
-# Check Images (Cover, Poster)
-# TODO
+# API Token Handling
+read -r -p "Enter tokens JSON: " tokens
+# uploadToken=$(echo "$tokens" | jq -r '.uploadToken')
+userToken=$(echo "$tokens" | jq -r '.userToken')
+[[ $(curl "$insecure" -o /dev/null -s -w "%{http_code}" -H "Authorization: Bearer $userToken" ${api}/api/account/hello) == "200" ]] || { echo "Invalid token..."; exit 1; }
+
+# Check Preview
+[[ $(mediainfo --Output="Image;%DisplayAspectRatio%" "${1}/"Preview.[jp][pn]g) == "1.778" ]] || { echo "Preview image not found or wrong aspect ratio..."; fail=1; }
+# TODO Check Cover, Poster
 
 # Check Media
-for file in "$1/"Media.m[op][v4]; do
-    [[ $(mediainfo --Output="Video;%AspectRatio%" "${file}") == "1.778" ]] || { echo "Wrong aspect ratio: ${file}..."; fail=1; }
-    # Check Images (Preview)
-    # TODO
-done
-
-# API Token Handling
-# TODO
+[[ $(mediainfo --Output="Video;%AspectRatio%" "${1}/"Media.m[op][v4]) == "1.778" ]] || { echo "Wrong aspect ratio: ${file}..."; fail=1; }
 
 # STOP if there are errors
 [[ $fail -eq 1 ]] && exit 1
 
 # Convert Video
-for file in "$1/Media".m[op][v4]; do
-    "$video2hls" --video-bitrates 4500 2500 1300 800 400 --video-widths 1920 1280 854 640 427  --no-poster --no-mp4 "$file"
-done
+"$video2hls" --video-bitrates 4500 2500 1300 800 400 --video-widths 1920 1280 854 640 427  --no-poster --no-mp4 "${1}/"Media.m[op][v4]
 
 # Optimise Images
 for file in "${1}/"*.[jp][pn]g; do
