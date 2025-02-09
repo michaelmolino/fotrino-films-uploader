@@ -75,7 +75,9 @@ metadata=$(curl -s $insecure -H "Authorization: Bearer $userToken" -H "X-Upload-
 channel_pending=$(echo "$metadata" | jq -r '.channel_pending')
 project_pending=$(echo "$metadata" | jq -r '.project_pending')
 
-read -r -p "Make sure there are no media errors before continuing with upload.\nPress enter to continue."
+echo
+read -r -p "Make sure there are no errors before continuing with upload. You can safely ignore the 'cannot extract codec' warning. Press enter to continue."
+echo
 
 # Upload files
 process_object () {
@@ -84,6 +86,7 @@ process_object () {
     until curl -X PUT -H "Content-Type: $type" --data-binary "@${file}"  "$url"; do
         echo "Retrying..."
         sleep 1
+        url=$(curl -s $insecure -H "Authorization: Bearer $userToken" -H "Content-Type: application/json" -X GET -d "{\"object\": \"${object}\"}" ${api}/api/upload/objectUrl | jq -r '.url')
     done
 }
 
