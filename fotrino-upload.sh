@@ -16,7 +16,7 @@ shopt -s nullglob
 
 # Check OS
 os=$(uname)
-[[ "$os" = 'Darwin' ]] || { echo "Untested Operating System!"; read -r -p "Press enter to continue"; }
+[[ "$os" = 'Darwin' ]] || { echo "Untested Operating System!"; read -r -p "Press enter to continue."; }
 
 # Check dependencies
 declare -a deps=("$video2hls" 'md5sum' 'tar' 'ffmpeg' 'gm' 'exiftool' 'mediainfo' 'jq' 'curl')
@@ -75,11 +75,16 @@ metadata=$(curl -s $insecure -H "Authorization: Bearer $userToken" -H "X-Upload-
 channel_pending=$(echo "$metadata" | jq -r '.channel_pending')
 project_pending=$(echo "$metadata" | jq -r '.project_pending')
 
+read -r -p "Make sure there are no media errors before continuing with upload.\nPress enter to continue."
+
 # Upload files
 process_object () {
     file=$1; object=$2; type=$3
     url=$(curl -s $insecure -H "Authorization: Bearer $userToken" -H "Content-Type: application/json" -X GET -d "{\"object\": \"${object}\"}" ${api}/api/upload/objectUrl | jq -r '.url')
-    curl -X PUT -H "Content-Type: $type" --data-binary "@${file}"  "$url"
+    until curl -X PUT -H "Content-Type: $type" --data-binary "@${file}"  "$url"; do
+        echo "Retrying..."
+        sleep 1
+    done
 }
 
 coverUrl=""
