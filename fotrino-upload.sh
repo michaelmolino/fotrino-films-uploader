@@ -42,18 +42,18 @@ userToken=$(echo "$tokens" | jq -r '.userToken')
 # Check Media
 files=("${1}/"Preview.{jpg,png})
 [[ ${#files[@]} -gt 0 ]] || { echo "Missing Preview..."; fail=1; }
-files=("${1}/"Media.{mp4,mpv,mp3})
+files=("${1}/"Media.{mp4,mov,mp3,webm})
 [[ ${#files[@]} -gt 0 ]] || { echo "Missing Media..."; fail=1; }
 
 # STOP if there are errors
 [[ $fail -eq 1 ]] && exit 1
 
 # Process Media
-files=("${1}/"Media.{mp4,mpv})
+files=("${1}/"Media.{mp4,mov,webm})
 [[ ${#files[@]} -gt 0 ]] && { 
     "$video2hls" --video-bitrates 4500 2500 1300 800 400 \
                  --video-widths 1920 1280 854 640 427 \
-                 --no-poster --no-mp4 "${1}/"Media.m[op][v4] || { 
+                 --no-poster --no-mp4 "${1}/"Media.* || { 
         echo "Media failed to convert..."; 
         exit 1; 
     } 
@@ -67,7 +67,7 @@ for file in "${1}/"*.[jp][pn]g; do
     dir="$(dirname "${file}")"
     filename=$(basename -- "${file}")
     basefile="${filename%.*}"
-    gm convert -resize 720x720 -strip -interlace Plane -quality 80 "${file}" "${dir}/${basefile}_opt.jpg" >/dev/null || { echo "$filename failed to process..."; exit 1; }
+    gm convert -resize 720x720 -strip -interlace Plane -quality 80 "${file}" "${dir}/${basefile}_opt.jpg" || { echo "$filename failed to process..."; exit 1; }
 done
 
 # Get metadata
