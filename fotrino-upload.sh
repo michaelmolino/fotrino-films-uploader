@@ -51,12 +51,12 @@ files=("${1}/"Media.{mp4,mpv,mp3})
 # Process Media
 files=("${1}/"Media.{mp4,mpv})
 [[ ${#files[@]} -gt 0 ]] && { 
-    # "$video2hls" --video-bitrates 4500 2500 1300 800 400 \
-    #              --video-widths 1920 1280 854 640 427 \
-    #              --no-poster --no-mp4 "${1}/"Media.m[op][v4] || { 
-    #     echo "Media failed to convert..."; 
-    #     exit 1; 
-    # } 
+    "$video2hls" --video-bitrates 4500 2500 1300 800 400 \
+                 --video-widths 1920 1280 854 640 427 \
+                 --no-poster --no-mp4 "${1}/"Media.m[op][v4] || { 
+        echo "Media failed to convert..."; 
+        exit 1; 
+    } 
     :
 }
 # files=("${1}/"Media.mp3)
@@ -67,7 +67,7 @@ for file in "${1}/"*.[jp][pn]g; do
     dir="$(dirname "${file}")"
     filename=$(basename -- "${file}")
     basefile="${filename%.*}"
-    # gm convert -resize 720x720 -strip -interlace Plane -quality 80 "${file}" "${dir}/${basefile}_opt.jpg" >/dev/null || { echo "$filename failed to process..."; exit 1; }
+    gm convert -resize 720x720 -strip -interlace Plane -quality 80 "${file}" "${dir}/${basefile}_opt.jpg" >/dev/null || { echo "$filename failed to process..."; exit 1; }
 done
 
 # Get metadata
