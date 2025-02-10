@@ -41,7 +41,7 @@ status=$(curl -s -o /dev/null -w "%{http_code}" $insecure -s -H "Authorization: 
 [[ "$status" == "200" ]] || { echo "Unable to validate tokens..."; exit 1; }
 
 # Check Media
-files=("${1}/"Preview.{jpg,png})
+files=("${1}/"Preview.{jpg,jpeg,png})
 [[ ${#files[@]} -gt 0 ]] || { echo "Missing Preview..."; fail=1; }
 files=("${1}/"Media.{mp4,mov,mp3,webm})
 [[ ${#files[@]} -gt 0 ]] || { echo "Missing Media..."; fail=1; }
@@ -64,7 +64,7 @@ files=("${1}/"Media.{mp4,mov,webm})
 # [[ ${#files[@]} -gt 0 ]] && AUDIO=true
 
 # Optimise Images
-for file in "${1}/"*.[jp][pn]g; do
+for file in "${1}/"*.{jpg,jpeg,png}; do
     dir="$(dirname "${file}")"
     filename=$(basename -- "${file}")
     basefile="${filename%.*}"
