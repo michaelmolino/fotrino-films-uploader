@@ -125,4 +125,7 @@ srcUrl="${minio_web_root}media/${hash}/index.m3u8"
 
 # Change pending status to false
 payload="{ \"cover\": \"$coverUrl\", \"poster\": \"$posterUrl\", \"preview\": \"$previewUrl\", \"src\": \"$srcUrl\", \"type\": \"application/vnd.apple.mpegurl\" }"
-curl -s $insecure -H "Authorization: Bearer $userToken" -H "X-Upload-Token: $uploadToken" -H "Content-Type: application/json" -X GET -d "$payload" ${api}/api/upload/post
+until curl -s $insecure -H "Authorization: Bearer $userToken" -H "X-Upload-Token: $uploadToken" -H "Content-Type: application/json" -X GET -d "$payload" ${api}/api/upload/post; do
+    echo "Retrying..."
+    sleep 1
+done
