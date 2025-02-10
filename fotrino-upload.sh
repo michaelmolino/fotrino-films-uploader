@@ -25,7 +25,7 @@ for dep in "${deps[@]}"; do
 done
 
 # Check Python version
-[[ $(python --version) == "Python 3."* ]] || { echo "Check Python version..."; fail=1; }
+[[ $(python3 --version) == "Python 3."* ]] || { echo "Check Python version..."; fail=1; }
 
 # Check command line parameter(s)
 [[ -n $1 && -d "$1" ]] || { echo "Missing or invalid parameter..."; fail=1; }
@@ -37,7 +37,8 @@ done
 read -r -p "Enter tokens JSON: " tokens
 uploadToken=$(echo "$tokens" | jq -r '.uploadToken')
 userToken=$(echo "$tokens" | jq -r '.userToken')
-[[ $(curl $insecure -o /dev/null -s -w "%{http_code}" -H "Authorization: Bearer $userToken" ${api}/api/upload/hello || echo "000") == "200" ]] || { echo "Invalid token..."; exit 1; }
+status=$(curl -s -o /dev/null -w "%{http_code}" $insecure -s -H "Authorization: Bearer $userToken" ${api}/api/upload/hello)
+[[ "$status" == "200" ]] || { echo "Unable to validate tokens..."; exit 1; }
 
 # Check Media
 files=("${1}/"Preview.{jpg,png})
@@ -82,15 +83,17 @@ echo
 # Upload files
 process_object () {
     file=$1; object=$2; type=$3
-    url=$(curl -s $insecure -H "Authorization: Bearer $userToken" -H "Content-Type: application/json" -X GET -d "{\"object\": \"${object}\"}" ${api}/api/upload/objectUrl | jq -r '.url')
-    until curl -X PUT -H "Content-Type: $type" --data-binary "@${file}"  "$url"; do
-        echo "Retrying..."
-        sleep 1
+    while true; do
         url=$(curl -s $insecure -H "Authorization: Bearer $userToken" -H "Content-Type: application/json" -X GET -d "{\"object\": \"${object}\"}" ${api}/api/upload/objectUrl | jq -r '.url')
+        status=$(curl -X PUT -H "Content-Type: $type" --data-binary "@${file}" -s -o /dev/null -w "%{http_code}" "$url")
+        if [[ "$status" == "200" ]]; then
+            break
+        fi
+        echo "Retrying... (HTTP $status)"
+        sleep 1
     done
 }
 
-coverUrl=""
 if [[ "$channel_pending" == true ]]; then
     file="${1}/Cover_opt.jpg"
     cover="covers/$(md5sum "${file}"|awk '{print $1}').jpg"
@@ -98,7 +101,6 @@ if [[ "$channel_pending" == true ]]; then
     coverUrl="${minio_web_root}${cover}"
 fi
 
-posterUrl=""
 if [[ "$project_pending" == true ]]; then
     file="${1}/Poster_opt.jpg"
     poster="posters/$(md5sum "${file}"|awk '{print $1}').jpg"
@@ -125,7 +127,16 @@ srcUrl="${minio_web_root}media/${hash}/index.m3u8"
 
 # Change pending status to false
 payload="{ \"cover\": \"$coverUrl\", \"poster\": \"$posterUrl\", \"preview\": \"$previewUrl\", \"src\": \"$srcUrl\", \"type\": \"application/vnd.apple.mpegurl\" }"
-until curl -s $insecure -H "Authorization: Bearer $userToken" -H "X-Upload-Token: $uploadToken" -H "Content-Type: application/json" -X GET -d "$payload" ${api}/api/upload/post; do
-    echo "Retrying..."
+while true; do
+    status=$(curl -s -o /dev/null -w "%{http_code}" $insecure \
+        -H "Authorization: Bearer $userToken" \
+        -H "X-Upload-Token: $uploadToken" \
+        -H "Content-Type: application/json" \
+        -X POST -d "$payload" ${api}/api/upload)
+
+    if [[ "$status" == "200" ]]; then
+        break
+    fi
+    echo "Retrying... (HTTP $status)"
     sleep 1
 done
