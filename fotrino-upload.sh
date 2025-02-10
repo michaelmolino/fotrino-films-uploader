@@ -72,9 +72,16 @@ for file in "${1}/"*.[jp][pn]g; do
 done
 
 # Get metadata
-metadata=$(curl -s $insecure -H "Authorization: Bearer $userToken" -H "X-Upload-Token: $uploadToken" ${api}/api/upload/metadata)
-channel_pending=$(echo "$metadata" | jq -r '.channel_pending')
-project_pending=$(echo "$metadata" | jq -r '.project_pending')
+metadata=$(curl -s -w "%{http_code}" $insecure -H "Authorization: Bearer $userToken" -H "X-Upload-Token: $uploadToken" ${api}/api/upload/metadata)
+http_status="${metadata: -3}"
+if [[ "$http_status" == "200" ]]; then
+    metadata="${metadata::-3}"
+    channel_pending=$(echo "$metadata" | jq -r '.channel_pending')
+    project_pending=$(echo "$metadata" | jq -r '.project_pending')
+else
+    echo "Unable to validate tokens..."
+    exit 1;
+fi
 
 echo
 read -r -p "Make sure there are no errors before continuing with upload. You can safely ignore the 'cannot extract codec' warning. Press enter to continue."
@@ -93,6 +100,9 @@ process_object () {
         sleep 1
     done
 }
+
+echo
+echo "$(date) Starting upload..."
 
 if [[ "$channel_pending" == true ]]; then
     file="${1}/Cover_opt.jpg"
@@ -113,10 +123,15 @@ preview="previews/$(md5sum "${file}"|awk '{print $1}').jpg"
 process_object "$file" "$preview" "image/jpeg"
 previewUrl="${minio_web_root}${preview}"
 
+count=0
 hash=$(tar -C / -cf - "${1:1}/Media" |md5sum |awk '{print $1}')
 for file in "${1}"/Media/*.ts; do
     object="media/${hash}/$(basename "$file")"
     process_object "$file" "$object" "video/mp4"
+    ((count++))
+    if (( count % 10 == 0 )); then
+        echo "        $(date) Still uploading..."
+    fi
 done
 
 for file in "${1}"/Media/*.m3u8; do
@@ -140,3 +155,5 @@ while true; do
     echo "Retrying... (HTTP $status)"
     sleep 1
 done
+
+echo "Success!"
