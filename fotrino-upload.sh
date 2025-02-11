@@ -65,10 +65,12 @@ files=("${1}/"Media.{mp4,mov,webm})
 
 # Optimise Images
 for file in "${1}/"*.{jpg,jpeg,png}; do
-    dir="$(dirname "${file}")"
-    filename=$(basename -- "${file}")
-    basefile="${filename%.*}"
-    gm convert -resize 720x720 -strip -interlace Plane -quality 80 "${file}" "${dir}/${basefile}_opt.jpg" || { echo "$filename failed to process..."; exit 1; }
+    if [[ ! "$file" =~ _opt\.(jpg|jpeg|png)$ ]]; then
+        dir="$(dirname "${file}")"
+        filename=$(basename -- "${file}")
+        basefile="${filename%.*}"
+        gm convert -resize 720x720 -strip -interlace Plane -quality 80 "${file}" "${dir}/${basefile}_opt.jpg" || { echo "$filename failed to process..."; exit 1; }
+    fi
 done
 
 # Get metadata
@@ -91,6 +93,7 @@ echo
 process_object () {
     file=$1; object=$2; type=$3
     while true; do
+        echo "        $(date) Uploading: $(basename "$file")"
         url=$(curl -s $insecure -H "Authorization: Bearer $userToken" -H "Content-Type: application/json" -X GET -d "{\"object\": \"${object}\"}" ${api}/api/upload/objectUrl | jq -r '.url')
         status=$(curl -X PUT -H "Content-Type: $type" --data-binary "@${file}" -s -o /dev/null -w "%{http_code}" "$url")
         if [[ "$status" == "200" ]]; then
@@ -123,15 +126,10 @@ preview="previews/$(md5sum "${file}"|awk '{print $1}').jpg"
 process_object "$file" "$preview" "image/jpeg"
 previewUrl="${minio_web_root}${preview}"
 
-count=0
 hash=$(tar -C / -cf - "${1:1}/Media" |md5sum |awk '{print $1}')
 for file in "${1}"/Media/*.ts; do
     object="media/${hash}/$(basename "$file")"
     process_object "$file" "$object" "video/mp4"
-    ((count++))
-    if (( count % 10 == 0 )); then
-        echo "        $(date) Still uploading..."
-    fi
 done
 
 for file in "${1}"/Media/*.m3u8; do
