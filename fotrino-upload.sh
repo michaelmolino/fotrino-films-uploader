@@ -19,7 +19,7 @@ os=$(uname)
 [[ "$os" = 'Darwin' ]] || { echo "Untested Operating System!"; read -r -p "Press enter to continue."; }
 
 # Check dependencies
-declare -a deps=("$video2hls" 'md5sum' 'tar' 'ffmpeg' 'gm' 'exiftool' 'mediainfo' 'jq' 'curl')
+declare -a deps=("$video2hls" 'md5sum' 'tar' 'ffmpeg' 'gm' 'jq' 'curl')
 for dep in "${deps[@]}"; do
     which "$dep" &>/dev/null || { echo "Missing ${dep}..."; fail=1; }
 done
