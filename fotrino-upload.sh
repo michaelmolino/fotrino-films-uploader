@@ -52,12 +52,7 @@ files=("${1}/"Media.{mp4,mov,mp3,webm})
 # Process Media
 files=("${1}/"Media.{mp4,mov,webm})
 [[ ${#files[@]} -gt 0 ]] && { 
-    "$video2hls" --video-bitrates 4500 2500 1300 800 400 \
-                 --video-widths 1920 1280 854 640 427 \
-                 --no-poster --no-mp4 "${1}/"Media.* || { 
-        echo "Media failed to convert..."; 
-        exit 1; 
-    } 
+    "$video2hls" --no-poster --no-mp4 "${1}/"Media.* || { echo "Media failed to convert..."; exit 1; } 
     :
 }
 # files=("${1}/"Media.mp3)
@@ -86,7 +81,7 @@ else
 fi
 
 echo
-read -r -p "Make sure there are no errors before continuing with upload. You can safely ignore the 'cannot extract codec' warning. Press enter to continue."
+read -r -p "Make sure there are no errors before continuing with upload. You can safely ignore the 'cannot extract codec' warning or any warnings about skipped resolutions. Press enter to continue."
 echo
 
 # Upload files
