@@ -6,9 +6,9 @@ insecure=''
 # insecure='-k'
 
 minio_web_root='https://media-us.fotrino.com/'
-# minio_web_root='http://localhost:9001/browser/fotrino/'
+# minio_web_root='http://localhost:9000/fotrino/'
 
-video2hls="${HOME}/Workspace/video2hls/video2hls"
+video2hls="${HOME}/Workspace/video2hls/"
 
 # DON'T CHANGE ANYTHING BELOW THIS LINE
 
@@ -19,7 +19,7 @@ os=$(uname)
 [[ "$os" = 'Darwin' ]] || { echo "Untested Operating System!"; read -r -p "Press enter to continue."; }
 
 # Check dependencies
-declare -a deps=("$video2hls" 'md5sum' 'tar' 'ffmpeg' 'gm' 'jq' 'curl')
+declare -a deps=("${video2hls}video2hls" 'md5sum' 'tar' 'ffmpeg' 'gm' 'jq' 'curl')
 for dep in "${deps[@]}"; do
     which "$dep" &>/dev/null || { echo "Missing ${dep}..."; fail=1; }
 done
@@ -29,6 +29,13 @@ done
 
 # Check command line parameter(s)
 [[ -n $1 && -d "$1" ]] || { echo "Missing or invalid parameter..."; fail=1; }
+
+# Check for code updates
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+git --git-dir="${script_dir}/.git" --work-tree="$script_dir" fetch
+[[ $(git --git-dir="${script_dir}/.git" --work-tree="$script_dir" status 2>/dev/null |grep -c "Your branch is up to date with 'origin/main'." ) == 1 ]] || { echo "fotrino-upload script must be updated..."; fail=1; }
+git --git-dir="${video2hls}.git" --work-tree="$video2hls" fetch
+[[ $(git --git-dir="${videl2hls}.git" --work-tree="$video2hls" status 2>/dev/null |grep -c "Your branch is up to date with 'origin/main'." ) == 1 ]] || { echo "video2hls must be updated..."; fail=1; }
 
 # STOP if there are errors
 [[ $fail -eq 1 ]] && exit 1
@@ -52,15 +59,15 @@ files=("${1}/"Media.{mp4,mov,mp3,webm})
 # Process Media
 files=("${1}/"Media.{mp4,mov,webm})
 [[ ${#files[@]} -gt 0 ]] && { 
-    "$video2hls" --no-poster --no-mp4 "${1}/"Media.* || { echo "Media failed to convert..."; exit 1; } 
+    "${video2hls}video2hls" --no-poster --no-mp4 "${1}/"Media.* || { echo "Media failed to convert..."; exit 1; } 
     :
 }
 # files=("${1}/"Media.mp3)
 # [[ ${#files[@]} -gt 0 ]] && AUDIO=true
 
 # Optimise Images
-for file in "${1}/"*.{jpg,jpeg,png}; do
-    if [[ ! "$file" =~ _opt\.(jpg|jpeg|png)$ ]]; then
+for file in "${1}/"*.{jpg,jpeg,png,webp}; do
+    if [[ ! "$file" =~ _opt\.(jpg|jpeg|png|webp)$ ]]; then
         dir="$(dirname "${file}")"
         filename=$(basename -- "${file}")
         basefile="${filename%.*}"
