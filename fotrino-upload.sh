@@ -64,7 +64,7 @@ status=$(curl -s -o /dev/null -w "%{http_code}" $insecure -s -H "Authorization: 
 metadata=$(curl -s -w "%{http_code}" $insecure -H "Authorization: Bearer $userToken" -H "X-Upload-Token: $uploadToken" ${api}/api/upload/metadata)
 http_status="${metadata: -3}"
 if [[ "$http_status" == "200" ]]; then
-    metadata="${metadata::-3}"
+    metadata=$(echo "$metadata" | sed 's/...$//')
     channel_pending=$(echo "$metadata" | jq -r '.channel_pending')
     project_pending=$(echo "$metadata" | jq -r '.project_pending')
 else
@@ -122,7 +122,7 @@ process_object () {
     while true; do
         echo "        $(date) Uploading: $(basename "$file")"
         url=$(curl -s $insecure -H "Authorization: Bearer $userToken" -H "Content-Type: application/json" -X GET -d "{\"object\": \"${object}\"}" ${api}/api/upload/objectUrl 2>/dev/null | jq -r '.url')
-        status=$(curl -X PUT -H "Content-Type: $type" --data-binary "@${file}" --progress-bar -o /dev/null -w "%{http_code}" "$url" 2>/dev/null)
+        status=$(curl -X PUT -H "Content-Type: $type" --data-binary "@${file}" --progress-bar -o /dev/null -w "%{http_code}" "$url")
         if [[ "$status" == "200" ]]; then
             break
         fi
