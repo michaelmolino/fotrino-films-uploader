@@ -18,7 +18,7 @@ while getopts ":d" OPTION; do
             minio_web_root='http://localhost:9000/fotrino'
             ;;
         ?)
-            echo "Usage: $(basename $0) [-d] /path/to/Media"
+            echo "Usage: $(basename "$0") [-d] /path/to/Media"
             exit 1
             ;;
     esac
@@ -48,7 +48,7 @@ git --git-dir="${video2hls}/.git/" --work-tree="${video2hls}/" fetch
 [[ $(git --git-dir="${video2hls}/.git/" --work-tree="${video2hls}/" status 2>/dev/null |grep -c "Your branch is up to date with" ) == 1 ]] || { echo "video2hls must be updated..."; fail=1; }
 
 # Check command line parameter(s)
-[[ -n $1 && -d "$1" ]] || { echo "Usage: $(basename $0) [-d] /path/to/Media"; fail=1; }
+[[ -n $1 && -d "$1" ]] || { echo "Usage: $(basename "$0") [-d] /path/to/Media"; fail=1; }
 
 # STOP if there are errors
 [[ $fail -eq 1 ]] && exit 1
@@ -64,6 +64,7 @@ status=$(curl -s -o /dev/null -w "%{http_code}" $insecure -s -H "Authorization: 
 metadata=$(curl -s -w "%{http_code}" $insecure -H "Authorization: Bearer $userToken" -H "X-Upload-Token: $uploadToken" ${api}/api/upload/metadata)
 http_status="${metadata: -3}"
 if [[ "$http_status" == "200" ]]; then
+    # shellcheck disable=SC2001
     metadata=$(echo "$metadata" | sed 's/...$//')
     channel_pending=$(echo "$metadata" | jq -r '.channel_pending')
     project_pending=$(echo "$metadata" | jq -r '.project_pending')
