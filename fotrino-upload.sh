@@ -64,8 +64,7 @@ status=$(curl -s -o /dev/null -w "%{http_code}" $insecure -s -H "Authorization: 
 metadata=$(curl -s -w "%{http_code}" $insecure -H "Authorization: Bearer $userToken" -H "X-Upload-Token: $uploadToken" ${api}/api/upload/metadata)
 http_status="${metadata: -3}"
 if [[ "$http_status" == "200" ]]; then
-    # shellcheck disable=SC2001
-    metadata=$(echo "$metadata" | sed 's/...$//')
+    metadata="${metadata%???}"
     channel_pending=$(echo "$metadata" | jq -r '.channel_pending')
     project_pending=$(echo "$metadata" | jq -r '.project_pending')
 else
