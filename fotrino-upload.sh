@@ -121,7 +121,7 @@ process_object () {
     file=$1; object=$2; type=$3
     while true; do
         echo "        $(date) Uploading: $(basename "$file")"
-        url=$(curl -s $insecure -H "Authorization: Bearer $userToken" -H "Content-Type: application/json" -X GET -d "{\"object\": \"${object}\"}" ${api}/api/upload/objectUrl 2>/dev/null | jq -r '.url')
+        url=$(curl -s $insecure -H "Authorization: Bearer $userToken" -H "X-Upload-Token: $uploadToken" -H "Content-Type: application/json" -X GET -d "{\"object\": \"${object}\"}" ${api}/api/upload/objectUrl 2>/dev/null | jq -r '.url')
         status=$(curl -X PUT -H "Content-Type: $type" --data-binary "@${file}" --progress-bar -o /dev/null -w "%{http_code}" "$url")
         if [[ "$status" == "200" ]]; then
             break
