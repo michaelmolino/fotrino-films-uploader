@@ -18,7 +18,7 @@ while getopts ":d" OPTION; do
             minio_web_root='http://localhost:9000/fotrino'
             ;;
         ?)
-            echo "Usage: $(basename "$0") [-d] /path/to/Media.mov"
+            echo "Usage: $(basename "$0") [-d] /path/to/your/media.{mp4,mov,webm}"
             exit 1
             ;;
     esac
@@ -48,7 +48,7 @@ git --git-dir="${video2hls}/.git/" --work-tree="${video2hls}/" fetch
 [[ $(git --git-dir="${video2hls}/.git/" --work-tree="${video2hls}/" status 2>/dev/null |grep -c "Your branch is up to date with" ) == 1 ]] || { echo "video2hls must be updated..."; fail=1; }
 
 # Check command line parameter(s)
-[[ -n $1 && -f "$1" ]] || { echo "Usage: $(basename "$0") [-d] /path/to/Media.mov"; fail=1; }
+[[ -n $1 && -f "$1" ]] || { echo "Usage: $(basename "$0") [-d] /path/to/your/media.{mp4,mov,webm}"; fail=1; }
 
 # STOP if there are errors
 [[ $fail -eq 1 ]] && exit 1
@@ -129,16 +129,3 @@ while true; do
 done
 
 echo "Success!"
-
-# NOTES
-# I should replace video2hls with ffmpeg
-# ffmpeg -i input.mp4 -map 0:v:0 -map 0:a:0 -c:a aac -b:a 128k -c:v h264 -crf 23 -g 48 -sc_threshold 0 \
-#   -filter:v:0 "scale=-2:240"  -b:v:0 400k  -maxrate:v:0 450k  -bufsize:v:0 800k  -preset faster \
-#   -filter:v:1 "scale=-2:480"  -b:v:1 800k  -maxrate:v:1 900k  -bufsize:v:1 1600k  -preset faster \
-#   -filter:v:2 "scale=-2:720"  -b:v:2 2800k -maxrate:v:2 3000k -bufsize:v:2 5600k -preset faster \
-#   -filter:v:3 "scale=-2:1080" -b:v:3 5000k -maxrate:v:3 5500k -bufsize:v:3 10000k -preset faster \
-#   -f hls -hls_time 6 -hls_playlist_type vod \
-#   -hls_segment_filename "hls/%v/segment_%03d.ts" \
-#   -master_pl_name "hls/master.m3u8" \
-#   -var_stream_map "v:0,a:0 v:1,a:0 v:2,a:0 v:3,a:0" \
-#   "hls/%v/index.m3u8"
